@@ -9,7 +9,7 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
-sdkconfig*
+sdkconfig.old
 null.d
 build/
 main/secrets/
