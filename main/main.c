@@ -38,18 +38,6 @@
 /** Mask to set in event group to signal a connection failure */
 #define WIFI_FAIL_BIT       BIT1
 
-/** Namespace which contains the user's information */
-#define AUTH_INFO_NAMESPACE     "\x00"
-/** Key for referring to the administrator username */
-#define AUTH_USERNAME_KEY       "\x00"
-/** Key for referring to the administrator password */
-#define AUTH_PASSWORD_KEY       "\x0a"
-
-/** Default value of the administrator username */
-#define AUTH_USERNAME_DEFAULT   "admin"
-/** Default value of the administrator password */
-#define AUTH_PASSWORD_DEFAULT   "admin"
-
 /** Event group to signal connection success/failure to uplink */
 EventGroupHandle_t          wifiEventGroup;
 /** Number of times the esp32 has tried connecting to the uplink */
@@ -59,9 +47,6 @@ int32_t                     retryCount;
 esp_netif_t                 *netifAp;
 /** Netif handles to manage the Station configuration of the esp32 */
 esp_netif_t                 *netifSta;
-
-nvs_handle_t                loginNvsHandle;
-
 
 /**
  * @brief               Event Handler for wifi events (such as station connect/disconnect)
@@ -250,52 +235,6 @@ wifi_apsta_init ()
     ESP_ERROR_CHECK (esp_event_handler_unregister (IP_EVENT, IP_EVENT_STA_GOT_IP, instanceGotIp));
     ESP_ERROR_CHECK (esp_event_handler_unregister (WIFI_EVENT, ESP_EVENT_ANY_ID, instanceAnyId));
     vEventGroupDelete (wifiEventGroup);
-}
-
-void
-nvs_auth_info_init ()
-{
-    esp_err_t   nvsStatus;
-    esp_err_t   valStatus;
-    size_t      bufLen;
-
-    // initialize nvs on the "nvsUsr" partition (this is for user related data, not app or driver data/logs)
-    // and open the namespace "login", which contains login related information, i.e. username and password
-    nvsStatus   = nvs_flash_init_partition ("nvs2");
-    if (nvsStatus == ESP_ERR_NVS_NO_FREE_PAGES || nvsStatus == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK (nvs_flash_erase_partition ("nvs2"));
-        nvsStatus   = nvs_flash_init_partition ("nvs2");
-    }
-    ESP_ERROR_CHECK (nvsStatus);
-
-    // open the auth information namespace, which contains the administrator username and password for logging in
-    ESP_ERROR_CHECK (nvs_open_from_partition ("nvs2", AUTH_INFO_NAMESPACE, NVS_READWRITE, &loginNvsHandle));
-
-    // check if there are any existing values of the username and password
-    // if there are no default values, then write the default values
-    bufLen      = MAX_USERNAME_LEN;
-    valStatus   = nvs_get_str (loginNvsHandle, AUTH_USERNAME_KEY, adminUsername, &bufLen);
-
-    if (valStatus == ESP_ERR_NVS_NOT_FOUND) {
-        nvs_set_str (loginNvsHandle, AUTH_USERNAME_KEY, AUTH_USERNAME_DEFAULT);
-    }
-
-    bufLen      = MAX_PASSWORD_LEN;
-    valStatus   = nvs_get_str (loginNvsHandle, AUTH_PASSWORD_KEY, adminPassword, &bufLen);
-
-    if (valStatus == ESP_ERR_NVS_NOT_FOUND) {
-        nvs_set_str (loginNvsHandle, AUTH_PASSWORD_KEY, AUTH_PASSWORD_DEFAULT);
-    }
-
-    nvs_commit (loginNvsHandle);
-
-    // read the stored username and password and write into the arrays and close the nvs
-    ESP_ERROR_CHECK (nvs_get_str (loginNvsHandle, AUTH_USERNAME_KEY, adminUsername, &bufLen));
-    ESP_ERROR_CHECK (nvs_get_str (loginNvsHandle, AUTH_PASSWORD_KEY, adminPassword, &bufLen));
-
-    nvs_close (loginNvsHandle);
-
-    printf ("USERNAME %s PASSWORRD %s\n", adminUsername, adminPassword);
 }
 
 void
