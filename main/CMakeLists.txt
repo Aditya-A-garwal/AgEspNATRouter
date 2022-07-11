@@ -1,7 +1,7 @@
 
 idf_component_register(SRCS
                             "main.c"
-                            "http_server.c"
+                            "webserver.c"
 
                         INCLUDE_DIRS
                             "."
